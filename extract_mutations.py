@@ -8,6 +8,7 @@ Created on Wed Nov 16 14:09:54 2022
 
 import pandas as pd
 import numpy as np
+import json
 
 
 # import vcf file
@@ -121,17 +122,18 @@ def identify_gene(pos_dic,id_dic,gff_df):
                         count += genes_dic[r][0]
                         genes_dic[r] = (count,id_dic[pos])
     return genes_dic
-                        
 
+# import vcf
+vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/2020-09-25_mod_SA6850_filteredFromAncestor.vcf")                     
+# import gff
+gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
 # import clustering results
 df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Data/cluster_results.csv')
-# adjust names
+# adjust clones id
 df = change_name(df)
-# import vcf
-vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/2020-09-25_mod_SA6850_filteredFromAncestor.vcf")
 
 
-# list of id for each cluster
+# choose list of id for each cluster
 cluster_1_id = df[df["phenotype_clusters_2"] == 1]
 cluster_2_id = df[df["phenotype_clusters_2"] == 2]
 
@@ -139,23 +141,6 @@ cluster_2_id = df[df["phenotype_clusters_2"] == 2]
 mut_count_1, mut_id_1 = get_mut(cluster_1_id.new_names, vcf)
 mut_count_2, mut_id_2 = get_mut(cluster_2_id.new_names, vcf)
 
-# check if all mutations appear atlest once -> only from parent not
-all_mut = []
-for mut in mut_count_1.keys():
-    if mut not in all_mut:
-        all_mut.append(mut)
-        
-for mut in mut_count_2.keys():
-    if mut not in all_mut:
-        all_mut.append(mut)   
-        
-for mut in vcf.POS:
-    if mut not in all_mut:
-        print(f"{mut} not in all mut")
-
-
-# import gff
-gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
 
 # look for the positions in gff file and assign a gene to the vcf position
 genes_1 = identify_gene(mut_count_1, mut_id_1,gff)
@@ -165,5 +150,15 @@ genes_2 = identify_gene(mut_count_2, mut_id_2,gff)
 set_genes_1 = set(genes_1.keys())
 set_genes_2 = set(genes_2.keys())
 dif = set_genes_1 ^ set_genes_2
+
+# write it to file
+# todo: sort by key
+with open("../Data/mutated_genes_SA6850_phenotypes.txt", 'w') as f:
+    f.write("Cluster 1:\n")
+    for key, value in genes_1.items(): 
+        f.write('%s:%s\n' % (key, value))
+    f.write("\n\nCluster 2:\n")
+    for key, value in genes_2.items(): 
+        f.write('%s:%s\n' % (key, value))
 
 
