@@ -65,22 +65,7 @@ def read_gff(path):
            'score', 6: 'strand', 7: 'frame', 8: "attribute"})
     
                       
-# import clustering results
-df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Data/cluster_results.csv')
-# adjust names
-df = change_name(df)
-# import vcf
-vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/2020-09-25_mod_SA6850_filteredFromAncestor.vcf")
 
-
-# list of id for each cluster
-cluster_1_id = df[df["phenotype_clusters_2"] == 1]
-cluster_2_id = df[df["phenotype_clusters_2"] == 2]
-
-
-# create dicitonaries to later safe mutations
-mut_in_1 = {}
-mut_in_2 = {}
 
 def get_mut(id_list, vcf_df):
     mut_count = {}
@@ -109,14 +94,48 @@ def get_mut(id_list, vcf_df):
             
     return mut_count, mut_id
 
-def identify_gene(pos_dic,gff_df):
-    for pos in pos_dic.keys():
-        
+def identify_gene(pos_dic,id_dic,gff_df):
+    # create dict of ranges:`rows assigned to the range`
+    ranges = {}
+    for index, row in gff_df.iterrows():
+        if index == 0:
+            continue
+        if f"{row.start}-{row.end}" not in ranges.keys():
+            ranges[f"{row.start}-{row.end}"] = [index]
+        else:
+            ranges[f"{row.start}-{row.end}"].append(index)
     
-    return
+    # go through mutation and get rows in gff to which it belongs to
+    genes_dic = {}
+    for pos, count in pos_dic.items():
+        # go through all possible ranges
+        for ran,row in ranges.items():
+            start,stop = ran.split("-")
+            # if position of mutation is part of the gene than add {gene:(count,list_clones)}
+            if pos <= int(stop) and pos >= int(start):
+                # go through all rows (rows in gff file) mutation is part of
+                for r in row:
+                    if r not in genes_dic.keys():
+                        genes_dic[r] = (count,id_dic[pos])
+                    else:
+                        count += genes_dic[r][0]
+                        genes_dic[r] = (count,id_dic[pos])
+    return genes_dic
+                        
+
+# import clustering results
+df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Data/cluster_results.csv')
+# adjust names
+df = change_name(df)
+# import vcf
+vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/2020-09-25_mod_SA6850_filteredFromAncestor.vcf")
 
 
+# list of id for each cluster
+cluster_1_id = df[df["phenotype_clusters_2"] == 1]
+cluster_2_id = df[df["phenotype_clusters_2"] == 2]
 
+# get the mutations
 mut_count_1, mut_id_1 = get_mut(cluster_1_id.new_names, vcf)
 mut_count_2, mut_id_2 = get_mut(cluster_2_id.new_names, vcf)
 
@@ -139,9 +158,12 @@ for mut in vcf.POS:
 gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
 
 # look for the positions in gff file and assign a gene to the vcf position
-genes_1 = identify_gene(mut_count_1, gff)
+genes_1 = identify_gene(mut_count_1, mut_id_1,gff)
+genes_2 = identify_gene(mut_count_2, mut_id_2,gff)
 
-
-
+# get symmetric diffences in genes
+set_genes_1 = set(genes_1.keys())
+set_genes_2 = set(genes_2.keys())
+dif = set_genes_1 ^ set_genes_2
 
 
