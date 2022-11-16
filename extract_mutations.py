@@ -10,8 +10,6 @@ import pandas as pd
 import numpy as np
 import json
 
-
-# import vcf file
 import io
 import os
 
@@ -119,8 +117,8 @@ def identify_gene(pos_dic,id_dic,gff_df):
                     if r not in genes_dic.keys():
                         genes_dic[r] = (count,id_dic[pos])
                     else:
-                        count += genes_dic[r][0]
-                        genes_dic[r] = (count,id_dic[pos])
+                        c = count + genes_dic[r][0]
+                        genes_dic[r] = (c,id_dic[pos])
     return genes_dic
 
 # import vcf
@@ -154,11 +152,12 @@ dif = set_genes_1 ^ set_genes_2
 # write it to file
 # todo: sort by key
 with open("../Data/mutated_genes_SA6850_phenotypes.txt", 'w') as f:
-    f.write("Cluster 1:\n")
+    f.write("#Cluster 1:\n")
     for key, value in genes_1.items(): 
         f.write('%s:%s\n' % (key, value))
-    f.write("\n\nCluster 2:\n")
+    f.write("\n\n#Cluster 2:\n")
     for key, value in genes_2.items(): 
         f.write('%s:%s\n' % (key, value))
+    f.write(f"\n\n#Dif:\n{str(dif)[1:-2]}")
 
 
