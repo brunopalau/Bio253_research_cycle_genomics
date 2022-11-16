@@ -1,0 +1,183 @@
+---
+title: "Strain6850 - Preanalysis"
+author: "BrunoPalau"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(tidyr)
+library(stats)
+library(ggpubr)
+library(ggalluvial)
+library(readxl)
+```
+
+```{r}
+df <- read_excel("SA_evolution_phenotypes_v2_noCowan.xlsx")
+```
+
+```{r}
+df <- df%>%
+  filter(SA_strain_ID == "Strain6850")
+
+# only select feature columns
+features <- df %>%
+  select("growth_in_supernatant", "growth_in_TSB", "average_STX", "average_H2O2_survival","Hemolysis_score")
+
+# log transform all relative features
+lapply(names(features),function(x){
+  # features[,x]<- features[,x]-min(features[,x]) / (max(features[,x]) - min(features[,x]))
+  return ()
+})
+
+
+features$log_average_STX <- log(features$average_STX)
+features$log_average_H2O2_survival <- log(features$average_H2O2_survival)
+# features$log_Hemolysis_score <- features$Hemolysis_score
+
+# normalize values
+features <- data.frame(scale(features))
+
+# perform pca
+pcas <- prcomp(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival","Hemolysis_score")])
+
+# store in features dataframe
+features$PC1 <- pcas$x[,1]
+features$PC2 <- pcas$x[,2]
+features$PC3 <- pcas$x[,3]
+features$PC4 <- pcas$x[,4]
+features$Strain <- df$SA_strain_ID
+features$Condition <- df$evolution_condition
+features$ID <- df$strain_clone_ID
+```
+
+
+
+````{r}
+# plot on 2 pc
+ggplot(features,
+       aes(x = PC1, y= PC2,color=Condition))+
+  geom_point()
+
+```
+
+
+# cluster only on one feature
+```{r}
+features$supernatant_growth_clusters_2 = as.factor(kmeans(features[,c("growth_in_supernatant")],2)$cluster)
+
+
+ggplot(features,
+       aes(x = PC1, y= PC2,color=supernatant_growth_clusters_2,shape=Condition))+
+  geom_point()
+
+```
+```{r}
+ggplot(features, aes(x = supernatant_growth_clusters_2, fill=Condition))+
+  geom_bar()
+```
+# cluster only on one feature
+```{r}
+features$TSB_growth_clusters_2 = as.factor(kmeans(features[,c("growth_in_TSB")],2)$cluster)
+
+
+ggplot(features,
+       aes(x = PC1, y= PC2,color=TSB_growth_clusters_2,shape=Condition))+
+  geom_point()
+
+```
+```{r}
+ggplot(features, aes(x = TSB_growth_clusters_2, fill=Condition))+
+  geom_bar()
+```
+# cluster only on one feature
+```{r}
+features$STX_clusters_2 = as.factor(kmeans(features[,c("average_STX")],2)$cluster)
+
+
+ggplot(features,
+       aes(x = PC1, y= PC2,color=STX_clusters_2,shape=Condition))+
+  geom_point()
+
+```
+
+```{r}
+ggplot(features, aes(x = STX_clusters_2, fill=Condition))+
+  geom_bar()
+```
+
+
+# cluster only on one feature
+```{r}
+features$log_STX_clusters_2 = as.factor(kmeans(features[,c("log_average_STX")],2)$cluster)
+
+
+ggplot(features,
+       aes(x = PC1, y= PC2,color=log_STX_clusters_2,shape=Condition))+
+  geom_point()
+
+```
+
+```{r}
+ggplot(features, aes(x = log_STX_clusters_2, fill=Condition))+
+  geom_bar()
+```
+
+
+# cluster only on one feature
+```{r}
+features$log_H2O2_clusters_2 = as.factor(kmeans(features[,c("log_average_H2O2_survival")],2)$cluster)
+
+
+ggplot(features,
+       aes(x = PC1, y= PC2,color=log_H2O2_clusters_2,shape=Condition))+
+  geom_point()
+
+```
+
+```{r}
+ggplot(features, aes(x = log_H2O2_clusters_2, fill=Condition))+
+  geom_bar()
+```
+
+# cluster only on one feature
+```{r}
+features$Hemolysis_clusters_2 = as.factor(kmeans(features[,c("Hemolysis_score")],2)$cluster)
+
+
+ggplot(features,
+       aes(x = PC1, y= PC2,color=Hemolysis_clusters_2,shape=Condition))+
+  geom_point()
+
+```
+
+```{r}
+ggplot(features, aes(x = log_H2O2_clusters_2, fill=Condition))+
+  geom_bar()
+```
+
+
+```{r}
+# cluster on features
+features$phenotype_clusters_2 = as.factor(kmeans(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival","Hemolysis_score")],2)$cluster)
+
+
+ggplot(features,
+       aes(x = PC1, y= PC2,color=phenotype_clusters_2,shape=Condition))+
+  geom_point()
+
+```
+
+
+proportion of condition found in each cluster
+```{r}
+ggplot(features, aes(x = phenotype_clusters_2, fill=Condition))+
+  geom_bar()
+```

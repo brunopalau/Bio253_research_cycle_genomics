@@ -1,0 +1,246 @@
+---
+title: "Treatment"
+author: "BrunoPalau"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(tidyr)
+library(stats)
+library(ggpubr)
+library(ggalluvial)
+library(readxl)
+```
+
+
+```{r}
+df <- read_excel("SA_evolution_phenotypes_v2_noCowan.xlsx")
+```
+
+
+```{r}
+# only select feature columns
+features <- df %>%
+  select("growth_in_supernatant", "growth_in_TSB", "average_STX", "average_H2O2_survival")
+
+# log transform all relative features
+features$log_average_STX <- log(features$average_STX)
+features$log_average_H2O2_survival <- log(features$average_H2O2_survival)
+
+# normalize values
+features <- data.frame(scale(features))
+
+# perform pca
+pcas <- prcomp(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival")])
+
+# store in features dataframe
+features$PC1 <- pcas$x[,1]
+features$PC2 <- pcas$x[,2]
+features$PC3 <- pcas$x[,3]
+features$PC4 <- pcas$x[,4]
+features$Strain <- df$SA_strain_ID
+features$Condition <- df$evolution_condition
+
+# plot on 2 pc
+ggplot(features%>%
+         filter(Strain == "Strain6850"),
+       aes(x = PC1, y= PC2,color=Condition))+
+  geom_point()
+
+# plot on 2 pc
+ggplot(features%>%
+         filter(Strain == "JE2"),
+       aes(x = PC1, y= PC2,color=Condition))+
+  geom_point()
+
+
+```
+
+```{r}
+# cluster on features
+features$phenotype_clusters_2 = as.factor(kmeans(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival")],2)$cluster)
+
+
+ggplot(features%>%
+         filter(Strain == "Strain6850"),
+       aes(x = PC1, y= PC2,color=phenotype_clusters_2,shape=Condition))+
+  geom_point()
+
+ggplot(features%>%
+         filter(Strain == "JE2"),
+       aes(x = PC1, y= PC2,color=phenotype_clusters_2,shape=Condition))+
+  geom_point()
+```
+
+
+
+proportion of condition found in each cluster
+```{r}
+ggplot(features%>%
+         filter(Strain == "Strain6850"), aes(x = phenotype_clusters_2, fill=Condition))+
+  geom_bar()
+```
+clustering on pca
+```{r}
+features$pca_clusters_2 = as.factor(kmeans(features%>%
+                                      select(PC1,PC2),2)$cluster)
+
+ggplot(features%>%
+         filter(Strain == "Strain6850"), aes(x = pca_clusters_2, fill=Condition))+
+  geom_bar()
+```
+
+
+
+take a look at all features in JE2 and 6850 to show that 6850 perform better in many features
+```{r}
+ggplot(features%>%
+         filter(Strain=="Strain6850"),
+       aes(x = Condition, y = growth_in_supernatant, fill = Condition))+
+  geom_boxplot() +
+  stat_compare_means(method="t.test", label = "p.signif")
+```
+
+```{r}
+ggplot(features%>%
+         filter(Strain=="Strain6850"),
+       aes(x = Condition, y = growth_in_TSB, fill = Condition))+
+  geom_boxplot() +
+  stat_compare_means(method="t.test", label = "p.signif")
+```
+
+
+```{r}
+ggplot(features%>%
+         filter(Strain=="Strain6850"),
+       aes(x = Condition, y = log_average_STX, fill = Condition))+
+  geom_boxplot() +
+  stat_compare_means(method="t.test", label = "p.signif")
+```
+
+
+```{r}
+ggplot(features%>%
+         filter(Strain=="Strain6850"),
+       aes(x = Condition, y = log_average_H2O2_survival, fill = Condition))+
+  geom_boxplot() +
+  stat_compare_means(method="t.test", label = "p.signif")
+
+# if STX is not higher but H2O2 survival is, then the difference cant be solely STX production
+```
+
+
+
+```{r}
+features %>%
+  filter(Strain == "Strain6850") %>%
+  group_by(Condition,phenotype_clusters_2) %>%
+  summarize(nr = n()) %>%
+  arrange() %>%
+  ggplot(aes(y = nr,axis2 = Condition, axis1 = phenotype_clusters_2, fill=phenotype_clusters_2)) +
+  geom_stratum()+
+  geom_alluvium()+
+  scale_x_discrete(limits = c("phenotype_clusters_2", "Condition"), expand = c(0.05, 0.05)) +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)))
+
+
+# all cluster
+```
+
+JE2- Strain
+```{r}
+ggplot(features%>%
+         filter(Strain=="JE2"),
+       aes(x = Condition, y = log_average_STX, fill = Condition))+
+  geom_boxplot() +
+  stat_compare_means(method="t.test", label = "p.signif")
+```
+
+
+```{r}
+ggplot(features%>%
+         filter(Strain=="JE2"),
+       aes(x = Condition, y = log_average_H2O2_survival, fill = Condition))+
+  geom_boxplot() +
+  stat_compare_means(method="t.test", label = "p.signif")
+
+# if STX is not higher but H2O2 survival is, then the difference cant be solely STX production
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r pressure, echo=FALSE}
+
+our_strains <- df %>%
+  filter(SA_strain_ID %in% c("Strain6850","JE2"))
+  
+
+ggplot(our_strains, aes(x=average_relative_growth_pqs, y=average_H2O2_survival, color=SA_strain_ID))+
+  geom_point() +
+  geom_smooth(method='lm')
+
+```
+
+
+```{r}
+ggplot(our_strains %>%
+         filter(SA_strain_ID == "Strain6850"), aes(x=average_relative_growth_pqs, y=average_H2O2_survival, color=evolution_condition))+
+  geom_point() +
+  geom_smooth(method='lm')
+
+```
+
+```{r}
+ggplot(our_strains %>%
+         filter(SA_strain_ID == "JE2"), aes(x=average_relative_growth_pqs, y=average_H2O2_survival, color=evolution_condition))+
+  geom_point() +
+  geom_smooth(method='lm')
+```
+
+```{r}
+ggplot(our_strains %>%
+         filter(evolution_condition == "TSB"), aes(x=average_relative_growth_pqs, y=average_H2O2_survival, color=SA_strain_ID))+
+  geom_point()
+  geom_smooth(method='lm')
+```
+
+```{r}
+ggplot(df %>%
+         filter(evolution_condition == "TSB"), aes(x=average_relative_growth_pqs, y=average_H2O2_survival, color=SA_strain_ID))+
+  geom_point() 
+  geom_smooth(method='lm')
+```
+
+```{r}
+our_strains %>%
+  group_by(evolution_condition)%>%
+  summarise(mean = mean(average_H2O2_survival))
+
+ggplot(our_strains, aes(x = evolution_condition, y= average_H2O2_survival)) +
+  geom_boxplot()
+```
+
+```{r}
+library(stats)
+
+our_strains %>%
+  mutate(strains = ifelse(strain_ID))
+
+kmeans()
+```
+
