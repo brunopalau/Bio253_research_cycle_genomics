@@ -20,7 +20,7 @@ library(readxl)
 ```
 
 ```{r}
-df <- read_excel("SA_evolution_phenotypes_v2_noCowan.xlsx")
+df <- read_excel("../Data/SA_evolution_phenotypes_v2_noCowan.xlsx")
 ```
 
 ```{r}
@@ -181,3 +181,9 @@ proportion of condition found in each cluster
 ggplot(features, aes(x = phenotype_clusters_2, fill=Condition))+
   geom_bar()
 ```
+
+save changes
+```{r}
+write.csv(features%>%select(c("ID","Strain","Condition","phenotype_clusters_2")),"../Data/cluster_results.csv")
+```
+
