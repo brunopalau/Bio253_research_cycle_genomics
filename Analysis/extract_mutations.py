@@ -99,10 +99,9 @@ def identify_gene(pos_dic,id_dic,gff_df):
     for index, row in gff_df.iterrows():
         if index == 0:
             continue
-        if f"{row.start}-{row.end}" not in ranges.keys():
-            ranges[f"{row.start}-{row.end}"] = [index]
-        else:
-            ranges[f"{row.start}-{row.end}"].append(index)
+        # only exract the "gene" row
+        if f"{row.start}-{row.end}" not in ranges.keys() and row.feature == "gene":
+            ranges[f"{row.start}-{row.end}"] = index
     
     # go through mutation and get rows in gff to which it belongs to
     genes_dic = {}
@@ -112,13 +111,16 @@ def identify_gene(pos_dic,id_dic,gff_df):
             start,stop = ran.split("-")
             # if position of mutation is part of the gene than add {gene:(count,list_clones)}
             if pos <= int(stop) and pos >= int(start):
-                # go through all rows (rows in gff file) mutation is part of
-                for r in row:
-                    if r not in genes_dic.keys():
-                        genes_dic[r] = (count,id_dic[pos])
-                    else:
-                        c = count + genes_dic[r][0]
-                        genes_dic[r] = (c,id_dic[pos])
+                # store only first row of a unique range
+                if row not in genes_dic.keys():
+                    genes_dic[row] = [count,{key:1 for key in id_dic[pos]}]
+                else:
+                    genes_dic[row][0] += count
+                    for id_ in id_dic[pos]:
+                        if id_ in genes_dic[row][1].keys():
+                            genes_dic[row][1][id_] += 1
+                        else:
+                            genes_dic[row][1][id_] = 1
     return genes_dic
 
 # import vcf
@@ -145,19 +147,28 @@ genes_1 = identify_gene(mut_count_1, mut_id_1,gff)
 genes_2 = identify_gene(mut_count_2, mut_id_2,gff)
 
 # get symmetric diffences in genes
-set_genes_1 = set(genes_1.keys())
-set_genes_2 = set(genes_2.keys())
-dif = set_genes_1 ^ set_genes_2
+unique_1 = {row:(genes_1[row]) for row in genes_1.keys() if row not in genes_2.keys()}
+unique_2 = {row:(genes_2[row]) for row in genes_2.keys() if row not in genes_1.keys()}
+
 
 # write it to file
 # todo: sort by key
-with open("../Data/mutated_genes_SA6850_phenotypes.txt", 'w') as f:
-    f.write("#Cluster 1:\n")
+with open("../Out/mutated_genes_SA6850_phenotypes.txt", 'w') as f:
+    f.write(f"#Cluster 1 ({len(genes_1.keys())}):\n")
     for key, value in genes_1.items(): 
         f.write('%s:%s\n' % (key, value))
-    f.write("\n\n#Cluster 2:\n")
+    f.write(f"\n\n#Cluster 2 ({len(genes_2.keys())}):\n")
     for key, value in genes_2.items(): 
         f.write('%s:%s\n' % (key, value))
-    f.write(f"\n\n#Dif:\n{str(dif)[1:-2]}")
-
-
+    f.write("\n\n#Unique to Cluster 1 ({len(unique_1.keys())}):\n")
+    for key,value in unique_1.items():
+        f.write('%s:%s\n' % (key, value))
+    f.write("\n\n#Unique to Cluster 2 ({len(unique_2.keys())}):\n")
+    for key,value in unique_2.items():
+        f.write('%s:%s\n' % (key, value))
+        
+        
+        
+        
+        
+        
