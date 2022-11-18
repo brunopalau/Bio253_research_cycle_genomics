@@ -14,6 +14,7 @@ import json
 import io
 import os
 
+
 def read_gff(path):
     with open(path, "r") as f:
         lines = [l for l in f if not l.startswith("#")]

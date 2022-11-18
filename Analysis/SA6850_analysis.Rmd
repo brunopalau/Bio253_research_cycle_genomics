@@ -177,27 +177,51 @@ features%>%
   select(ID)
 ```
 
+optimal number of clusters
+```{r}
+library(cluster)
+library(factoextra)
+
+# Elbow method
+fviz_nbclust(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival","Hemolysis_score")], kmeans, method = "wss") +
+    geom_vline(xintercept = 4, linetype = 2)+
+  labs(subtitle = "Elbow method")
+
+# Silhouette method
+fviz_nbclust(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival","Hemolysis_score")], kmeans, method = "silhouette")+
+  labs(subtitle = "Silhouette method")
+
+# Gap statistic
+# nboot = 50 to keep the function speedy. 
+# recommended value: nboot= 500 for your analysis.
+# Use verbose = FALSE to hide computing progression.
+set.seed(123)
+fviz_nbclust(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival","Hemolysis_score")], kmeans, nstart = 25,  method = "gap_stat", nboot = 50)+
+  labs(subtitle = "Gap statistic method")
+```
+
 ```{r}
 # cluster on features
-features$phenotype_clusters_2 = as.factor(kmeans(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival","Hemolysis_score")],2)$cluster)
+features$phenotype_clusters_4 = as.factor(kmeans(features[,c("growth_in_supernatant", "growth_in_TSB", "log_average_STX", "log_average_H2O2_survival","Hemolysis_score")],4)$cluster)
+```
 
-
+```{r}
 ggplot(features,
-       aes(x = PC1, y= PC2,color=phenotype_clusters_2,shape=Condition))+
+       aes(x = PC1, y= PC2,color=phenotype_clusters_4,shape=Condition))+
   geom_point()
 
 ```
 
-
 proportion of condition found in each cluster
 ```{r}
-ggplot(features, aes(x = phenotype_clusters_2, fill=Condition))+
+ggplot(features, aes(x = phenotype_clusters_4, fill=Condition))+
   geom_bar()
 ```
 get the id of wrong clustering TSB clones
 ```{r}
 features%>%
-  filter(Condition == "TSB" & phenotype_clusters_2 == 1 & ID %in% in_stx$ID & log_H2O2_clusters_2 == 2) %>%
+  # filter(Condition == "TSB" & phenotype_clusters_2 == 2 & log_STX_clusters_2 == 1 & log_H2O2_clusters_2 == 1) %>%
+  filter(Condition == "TSB" & phenotype_clusters_2 == 2) %>%
   select(ID)
 ```
 
