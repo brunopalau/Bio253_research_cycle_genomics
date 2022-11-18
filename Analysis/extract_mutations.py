@@ -150,21 +150,34 @@ genes_2 = identify_gene(mut_count_2, mut_id_2,gff)
 unique_1 = {row:(genes_1[row]) for row in genes_1.keys() if row not in genes_2.keys()}
 unique_2 = {row:(genes_2[row]) for row in genes_2.keys() if row not in genes_1.keys()}
 
+# get common mutations
+common = {row:[genes_1[row][0] + genes_1[row][0], list(genes_1[row][1].keys()) + list(genes_1[row][1].keys())] for row in genes_1.keys() if row in genes_2.keys()}
+
+
+# sort dictionaries we want to print
+genes_1 = sorted(genes_1.items(), key=lambda x:x[0])
+genes_2 = sorted(genes_2.items(), key=lambda x:x[0])
+unique_1 = sorted(unique_1.items(), key=lambda x:x[0])
+unique_2 = sorted(unique_2.items(), key=lambda x:x[0])
+common = sorted(common.items(), key=lambda x:x[0])
+
 
 # write it to file
-# todo: sort by key
 with open("../Out/mutated_genes_SA6850_phenotypes.txt", 'w') as f:
-    f.write(f"#Cluster 1 ({len(genes_1.keys())}):\n")
-    for key, value in genes_1.items(): 
+    f.write(f"\n#Cluster 1 ({len(genes_1)}):\n")
+    for key, value in genes_1: 
         f.write('%s:%s\n' % (key, value))
-    f.write(f"\n\n#Cluster 2 ({len(genes_2.keys())}):\n")
-    for key, value in genes_2.items(): 
+    f.write(f"\n\n#Cluster 2 ({len(genes_2)}):\n")
+    for key, value in genes_2: 
         f.write('%s:%s\n' % (key, value))
-    f.write("\n\n#Unique to Cluster 1 ({len(unique_1.keys())}):\n")
-    for key,value in unique_1.items():
+    f.write(f"\n\n#Unique to Cluster 1 ({len(unique_1)}):\n")
+    for key,value in unique_1:
         f.write('%s:%s\n' % (key, value))
-    f.write("\n\n#Unique to Cluster 2 ({len(unique_2.keys())}):\n")
-    for key,value in unique_2.items():
+    f.write(f"\n\n#Unique to Cluster 2 ({len(unique_2)}):\n")
+    for key,value in unique_2:
+        f.write('%s:%s\n' % (key, value))
+    f.write(f"\n\n#Common ({len(common)}):\n")
+    for key,value in common:
         f.write('%s:%s\n' % (key, value))
         
         

@@ -25,7 +25,9 @@ def read_gff(path):
            'score', 6: 'strand', 7: 'frame', 8: "attribute"})
                       
                       
-def get_gene(row,gff):
+def get_gene(row,feature,gff):
+    
+    
     return gff.loc[row,:]
 
 def get_rows_from_file(path):
@@ -42,7 +44,7 @@ def get_rows_from_file(path):
                     output_rows.append(cluster_rows)
                 last = True
                 continue
-            elif line.startswith("#Cluster"):
+            elif line.startswith("#"):
                 if len(cluster_rows) != 0:
                     output_rows.append(cluster_rows)
                 cluster_rows = []
@@ -59,6 +61,6 @@ def get_rows_from_file(path):
 # import gff
 gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
 # get row we want gene from
-gene_rows = get_rows_from_file("/Users/bp/Uni/Computational/HS22/BIO253/Data/mutated_genes_SA6850_phenotypes.txt")
+gene_rows = get_rows_from_file("/Users/bp/Uni/Computational/HS22/BIO253/Bio253_research_cycle_genomics/Out/mutated_genes_SA6850_phenotypes.txt")
 # get genes corresponding to the extracted rows
-get_gene(gene_rows[1], gff)
+get_gene(gene_rows[1], feature, gff)
