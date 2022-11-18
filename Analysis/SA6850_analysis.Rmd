@@ -21,6 +21,7 @@ library(readxl)
 
 ```{r}
 df <- read_excel("../../Data/SA_evolution_phenotypes_v2_noCowan.xlsx")
+set.seed(123)
 ```
 
 ```{r}
@@ -130,6 +131,13 @@ ggplot(features, aes(x = log_STX_clusters_2, fill=Condition))+
   geom_bar()
 ```
 
+get the id of wrong clustering TSB clones
+```{r}
+in_stx <- features%>%
+  filter(Condition == "TSB" & log_STX_clusters_2 == 2) %>%
+  select(ID)
+```
+
 
 # cluster only on one feature
 ```{r}
@@ -165,7 +173,7 @@ ggplot(features, aes(x = log_H2O2_clusters_2, fill=Condition))+
 get the id of wrong clustering TSB clones
 ```{r}
 features%>%
-  filter(Condition == "TSB" & log_H2O2_clusters_2 == 2) %>%
+  filter(Condition == "TSB" & log_H2O2_clusters_2 == 2 & ID %in% in_stx$ID) %>%
   select(ID)
 ```
 
@@ -189,7 +197,7 @@ ggplot(features, aes(x = phenotype_clusters_2, fill=Condition))+
 get the id of wrong clustering TSB clones
 ```{r}
 features%>%
-  filter(Condition == "TSB" & phenotype_clusters_2 == 1) %>%
+  filter(Condition == "TSB" & phenotype_clusters_2 == 1 & ID %in% in_stx$ID & log_H2O2_clusters_2 == 2) %>%
   select(ID)
 ```
 
@@ -197,6 +205,6 @@ features%>%
 
 save changes
 ```{r}
-write.csv(features%>%select(c("ID","Strain","Condition","phenotype_clusters_2")),"../Data/cluster_results.csv")
+write.csv(features%>%select(c("ID","Strain","Condition","phenotype_clusters_2")),"../../Data/cluster_results.csv")
 ```
 

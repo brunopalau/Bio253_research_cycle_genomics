@@ -140,6 +140,7 @@ cluster_2_id = df[df["phenotype_clusters_2"] == 2]
 # get the mutations
 mut_count_1, mut_id_1 = get_mut(cluster_1_id.new_names, vcf)
 mut_count_2, mut_id_2 = get_mut(cluster_2_id.new_names, vcf)
+# todo: get rid of synonymous mutations
 
 
 # look for the positions in gff file and assign a gene to the vcf position
@@ -149,6 +150,10 @@ genes_2 = identify_gene(mut_count_2, mut_id_2,gff)
 # get symmetric diffences in genes
 unique_1 = {row:(genes_1[row]) for row in genes_1.keys() if row not in genes_2.keys()}
 unique_2 = {row:(genes_2[row]) for row in genes_2.keys() if row not in genes_1.keys()}
+
+# get unique combination of mutations
+
+
 
 # get common mutations
 common = {row:[genes_1[row][0] + genes_1[row][0], list(genes_1[row][1].keys()) + list(genes_1[row][1].keys())] for row in genes_1.keys() if row in genes_2.keys()}

@@ -26,7 +26,8 @@ def read_gff(path):
                       
                       
 def get_gene(row,feature,gff):
-    
+    for line in gff.attribute[1]:
+        
     
     return gff.loc[row,:]
 
