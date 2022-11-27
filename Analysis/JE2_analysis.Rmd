@@ -160,6 +160,8 @@ complex heatmap visualization
 ```{r}
 library(ComplexHeatmap)
 
+pdf("../Out/JE2/heatmap_JE2.pdf", width = 16, height = 8)
+
 # seperate relative and absolute values
 stx_max = max(abs(min(log(features$og_STX))),max(log(features$og_STX)))
 h2o2_max = max(abs(min(log(features$og_H2O2))),max(log(features$og_H2O2)))
@@ -214,7 +216,9 @@ aboslute_hm <- Heatmap(absolute_m,
 
 
 je2_hm <- relative_hm %v% aboslute_hm
-je2_hm
+
+draw(je2_hm)
+dev.off()
 ```
 
 
