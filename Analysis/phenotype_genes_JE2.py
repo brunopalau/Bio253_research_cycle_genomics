@@ -276,7 +276,7 @@ def mutation_graph(mut_id_1, mut_id_2, mut_id_3, mut_id_4, df):
     # Set attributes for the graph, nodes, and edges
     g["title"] = "Mutation Network"
     g.vs["name"] = list_clones
-    g.vs["cluster"] = df["phenotype_clusters_4"]
+    g.vs["cluster"] = df["phenotype_clusters"]
     # g.vs["x"] = df["PC1"]
     # g.vs["y"] = df["PC2"]
     # todo: add further attribures as "unique", "pathway"
@@ -339,16 +339,16 @@ vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/JE2_set_forIGV/2020
 # import gff
 gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/JE2_set_forIGV/SE_SE2_GCA_002085525.1_ASM208552v1_genomic.gff")
 # import clustering results
-df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Data/cluster_results_je2.csv')
+df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Bio253_research_cycle_genomics/Out/JE2/cluster_results_JE2.csv')
 # adjust clones id
 df = change_name(df)
 
 
 # choose list of id for each cluster
-cluster_1_id = df[df["phenotype_clusters_4"] == 1]
-cluster_2_id = df[df["phenotype_clusters_4"] == 2]
-cluster_3_id = df[df["phenotype_clusters_4"] == 3]
-cluster_4_id = df[df["phenotype_clusters_4"] == 4]
+cluster_1_id = df[df["phenotype_clusters"] == 1]
+cluster_2_id = df[df["phenotype_clusters"] == 2]
+cluster_3_id = df[df["phenotype_clusters"] == 3]
+cluster_4_id = df[df["phenotype_clusters"] == 4]
 
 
 # get the mutations
@@ -376,7 +376,7 @@ genes_4_id = {row:(list(genes_4[row][1].keys())) for row in genes_4.keys()}
 g = mutation_graph(genes_1_id, genes_2_id, genes_3_id, genes_4_id,df)
 coord = np.array(list(zip(df["PC1"],df["PC2"])))
 fig = visualize_graph(g,coord)
-fig.savefig('../Out/phenotype_JE2_all.eps', format='eps')
+fig.savefig('../Out/JE2/phenotype_JE2_all.eps', format='eps')
 
 # get symmetric diffences in genes
 unique_1 = {row:(genes_1[row]) for row in genes_1.keys() if row not in genes_2.keys() and row not in genes_3.keys() and row not in genes_4.keys()}
@@ -400,7 +400,7 @@ unique_4_id = {row:(list(genes_4[row][1].keys()))for row in genes_4.keys() if ro
 
 g_unique = mutation_graph(unique_1_id, unique_2_id, unique_3_id, unique_4_id, df)
 fig = visualize_graph(g_unique,coord)
-fig.savefig('../Out/phenotype_JE2_unique.eps', format='eps')
+fig.savefig('../Out/JE2/phenotype_JE2_unique.eps', format='eps')
 
 
 
@@ -445,7 +445,7 @@ for index, row in gff.iterrows():
         ranges[index] = f"{row.start}-{row.end}"
 
 # write it to file
-with open("../Out/mutated_genes_JE2_phenotype.txt", 'w') as f:
+with open("../Out/JE2/mutated_genes_JE2_phenotype.txt", 'w') as f:
     # cluster 1
     f.write(f"\n#Cluster 1 ({len(genes_1)}):\n")
     for key, value in genes_1: 
@@ -484,4 +484,4 @@ with open("../Out/mutated_genes_JE2_phenotype.txt", 'w') as f:
         f.write('%s,%s,%s: %s\n' % (key,gff.gene[key],ranges[key], value))
 
 # store gff file
-gff.to_csv('../Out/gff_JE2.csv')
+gff.to_csv('../Out/JE2/gff_JE2.csv')

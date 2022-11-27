@@ -349,7 +349,7 @@ genes_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys()}
 g = mutation_graph(genes_1_id, genes_2_id, df)
 coord = np.array(list(zip(df["PC1"],df["PC2"])))
 fig = visualize_graph(g,coord)
-fig.savefig('../Out/phenotype_SA6850_all.eps', format='eps')
+fig.savefig('../Out/SA6850/phenotype_SA6850_all.eps', format='eps')
 
 # get symmetric diffences in genes
 unique_1 = {row:(genes_1[row]) for row in genes_1.keys() if row not in genes_2.keys()}
@@ -365,7 +365,7 @@ unique_1_id = {row:(list(genes_1[row][1].keys())) for row in genes_1.keys() if r
 unique_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys() if row not in genes_1.keys()}
 g_unique = mutation_graph(unique_1_id, unique_2_id, df)
 fig = visualize_graph(g_unique,coord)
-fig.savefig('../Out/phenotype_SA6850_unique.eps', format='eps')
+fig.savefig('../Out/SA6850/phenotype_SA6850_unique.eps', format='eps')
 
 
 
@@ -374,7 +374,7 @@ unique_1_id = {row:(list(genes_1[row][1].keys())) for row in genes_1.keys() if r
 unique_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys() if row not in genes_1.keys()}
 g_unique = mutation_graph(unique_1_id, unique_2_id, df)
 fig = visualize_graph(g_unique,coord)
-fig.savefig('../Out/phenotype_SA6850_function_unique.eps', format='eps')
+fig.savefig('../Out/SA6850/phenotype_SA6850_function_unique.eps', format='eps')
 
 
 #todo: get unique combination of mutations

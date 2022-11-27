@@ -299,7 +299,7 @@ vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/JE2_set_forIGV/2020
 # import gff
 gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/JE2_set_forIGV/SE_SE2_GCA_002085525.1_ASM208552v1_genomic.gff")
 # import clustering results
-df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Data/condition_results_je2.csv')
+df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Bio253_research_cycle_genomics/Out/JE2/condition_results_JE2.csv')
 # adjust clones id
 df = change_name(df)
 
@@ -325,7 +325,7 @@ genes_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys()}
 g = mutation_graph(genes_1_id, genes_2_id, df)
 coord = np.array(list(zip(df["PC1"],df["PC2"])))
 fig = visualize_graph(g,coord)
-fig.savefig('../Out/condition_JE2_all.eps', format='eps')
+fig.savefig('../Out/JE2/condition_JE2_all.eps', format='eps')
 
 # get symmetric diffences in genes
 unique_1 = {row:(genes_1[row]) for row in genes_1.keys() if row not in genes_2.keys()}
@@ -336,7 +336,7 @@ unique_1_id = {row:(list(genes_1[row][1].keys())) for row in genes_1.keys() if r
 unique_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys() if row not in genes_1.keys()}
 g_unique = mutation_graph(unique_1_id, unique_2_id, df)
 fig = visualize_graph(g_unique,coord)
-fig.savefig('../Out/condition_JE2_unique.eps', format='eps')
+fig.savefig('../Out/JE2/condition_JE2_unique.eps', format='eps')
 
 #todo: get unique combination of mutations
 
@@ -366,7 +366,7 @@ for index, row in gff.iterrows():
         ranges[index] = f"{row.start}-{row.end}"
 
 # write it to file
-with open("../Out/mutated_genes_JE2_condition.txt", 'w') as f:
+with open("../Out/JE2/mutated_genes_JE2_condition.txt", 'w') as f:
     f.write(f"\n#Cluster 1 ({len(genes_1)}):\n")
     for key, value in genes_1: 
         f.write('%s,%s,%s:%s\n' % (key,gff.gene[key],ranges[key], value))

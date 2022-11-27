@@ -298,7 +298,7 @@ vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/2
 # import gff
 gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
 # import clustering results
-df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Out/SA6850/condition_results.csv')
+df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Bio253_research_cycle_genomics/Out/SA6850/condition_results_SA6850.csv')
 # adjust clones id
 df = change_name(df)
 
