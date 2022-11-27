@@ -15,6 +15,9 @@ import os
 from collections import defaultdict
 import gzip
 import re
+import itertools
+import igraph as ig
+import matplotlib.pyplot as plt
 
 def read_vcf(path):
     with open(path, 'r') as f:
@@ -56,17 +59,6 @@ def change_name(df):
     return df
 
 
-
-
-# def read_gff(path):
-#     with open(path, "r") as f:
-#         lines = [l for l in f if not l.startswith("#")]
-        
-#         return pd.read_csv(
-#         io.StringIO(''.join(lines)),
-#         sep='\t',header=None
-#     ).rename(columns={0: 'seqname',1: 'source', 2: 'feature', 3:'start', 4: 'end', 5:
-#            'score', 6: 'strand', 7: 'frame', 8: "attribute"})
 
 GTF_HEADER  = ['seqname', 'source', 'feature', 'start', 'end', 'score',
                'strand', 'frame']
@@ -211,19 +203,134 @@ def identify_gene(pos_dic,id_dic,gff_df):
                             genes_dic[row][1][id_] = 1
     return genes_dic
 
+
+def mutation_graph(mut_id_1, mut_id_2, df):
+    
+    list_clones = list(df.new_names)
+    
+    n_vertices = len(list_clones)
+    edges = []
+    edge_color = []
+    
+    total_dic = {}
+    # combine both dictionaries
+    for key_1 in mut_id_1.keys():
+        if key_1 in mut_id_2.keys():
+            total_dic[key_1] = mut_id_1[key_1] + mut_id_2[key_1]
+        else:
+            total_dic[key_1] = mut_id_1[key_1]
+    for key_2 in mut_id_2.keys():
+        if key_2 in total_dic.keys():
+            continue
+        else:
+            total_dic[key_2] = mut_id_2[key_2]
+    
+    # generate edges list
+    for clones in list(total_dic.values()):
+        # get index in clones list
+        c = [list_clones.index(clone) for clone in clones]
+        # generate all egdes
+        combinations = list(itertools.combinations(c,2))
+        if len(combinations) == 0:
+            combinations = [(c[0],c[0])]
+        # add to edges list
+        edges.extend(combinations)
+        
+    for pair in edges:
+        vert_1 = pair[0]
+        vert_2 = pair[1]
+        
+        cond_1 = df["Condition"][vert_1]
+        cond_2 = df["Condition"][vert_2]
+        
+        if cond_1 == cond_2:
+            if cond_1 == "supernatant":
+                edge_color.append("orange")
+            else:
+                edge_color.append("blue")
+        else:
+            edge_color.append("red")
+    
+    # create igraph
+    g = ig.Graph(n_vertices, edges)
+    
+    # color edges
+    g.es["color"] = edge_color
+    
+    # Set attributes for the graph, nodes, and edges
+    g["title"] = "Mutation Network"
+    g.vs["name"] = list_clones
+    g.vs["cluster"] = df["phenotype_clusters"]
+    # g.vs["x"] = df["PC1"]
+    # g.vs["y"] = df["PC2"]
+    # todo: add further attribures as "unique", "pathway"
+    g.vs["condition"] = df["Condition"]
+    
+    
+    return g
+
+def visualize_graph(g,coord):
+    fig, ax = plt.subplots(figsize=(5,5))
+    ig.plot(
+    g,
+    layout="circle",
+    target=ax,
+    # layout=coord,
+    vertex_size=0.05,
+    vertex_color=["steelblue" if cluster == 1 else "salmon" for cluster in g.vs["cluster"]],
+    vertex_frame_width=2.0,
+    vertex_frame_color="white",
+    vertex_label=g.vs["name"],
+    vertex_label_size=7.0,
+    vertex_label_dist = 10,
+    vertex_label_color = "blue",
+    edge_width = 1,
+    # edge_width=[2 if married else 1 for married in g.es["married"]],
+    
+    )
+
+    plt.show()
+    
+    return fig
+                
+
+def identify_function(genes_dic,gff_df):
+    
+    functions_dic = {}
+    
+    for pos,value in genes_dic.items():
+        count = value[0]
+        ids = value[1]
+
+        function = gff_df["product"][pos+1]
+        
+        if function not in functions_dic.keys():
+            functions_dic[function] = [count, [pos], ids]
+        else:
+            functions_dic[function][0] += count
+            functions_dic[function][1].append(pos)
+            for id_ in ids.keys():
+                if id_ not in functions_dic[function][2].keys():
+                    functions_dic[function][2][id_] = 1
+                else:
+                    functions_dic[function][2][id_] += ids[id_]        
+    
+    return functions_dic
+
+
 # import vcf
 vcf = read_vcf("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/2020-09-25_mod_SA6850_filteredFromAncestor.vcf")                     
 # import gff
 gff = read_gff("/Users/bp/Uni/Computational/HS22/BIO253/Data/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
 # import clustering results
-df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Data/cluster_results.csv')
+df = pd.read_csv('/Users/bp/Uni/Computational/HS22/BIO253/Bio253_research_cycle_genomics/Out/SA6850/cluster_results_SA6850.csv')
 # adjust clones id
 df = change_name(df)
 
 
 # choose list of id for each cluster
-cluster_1_id = df[df["phenotype_clusters_2"] == 1]
-cluster_2_id = df[df["phenotype_clusters_2"] == 2]
+cluster_1_id = df[df["phenotype_clusters"] == 1]
+cluster_2_id = df[df["phenotype_clusters"] == 2]
 
 # get the mutations
 mut_count_1, mut_id_1 = get_mut(cluster_1_id.new_names, vcf)
@@ -235,12 +342,45 @@ mut_count_2, mut_id_2 = get_mut(cluster_2_id.new_names, vcf)
 genes_1 = identify_gene(mut_count_1, mut_id_1,gff)
 genes_2 = identify_gene(mut_count_2, mut_id_2,gff)
 
+
+# visualize mutations shared
+genes_1_id = {row:(list(genes_1[row][1].keys())) for row in genes_1.keys()}
+genes_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys()}
+g = mutation_graph(genes_1_id, genes_2_id, df)
+coord = np.array(list(zip(df["PC1"],df["PC2"])))
+fig = visualize_graph(g,coord)
+fig.savefig('../Out/phenotype_SA6850_all.eps', format='eps')
+
 # get symmetric diffences in genes
 unique_1 = {row:(genes_1[row]) for row in genes_1.keys() if row not in genes_2.keys()}
 unique_2 = {row:(genes_2[row]) for row in genes_2.keys() if row not in genes_1.keys()}
 
-# get unique combination of mutations
+# product level
+unique_function_1 = identify_function(unique_1, gff)
+unique_function_2 = identify_function(unique_2, gff)
 
+
+# visualize only unique mutations
+unique_1_id = {row:(list(genes_1[row][1].keys())) for row in genes_1.keys() if row not in genes_2.keys()}
+unique_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys() if row not in genes_1.keys()}
+g_unique = mutation_graph(unique_1_id, unique_2_id, df)
+fig = visualize_graph(g_unique,coord)
+fig.savefig('../Out/phenotype_SA6850_unique.eps', format='eps')
+
+
+
+# visualize functional level
+unique_1_id = {row:(list(genes_1[row][1].keys())) for row in genes_1.keys() if row not in genes_2.keys()}
+unique_2_id = {row:(list(genes_2[row][1].keys())) for row in genes_2.keys() if row not in genes_1.keys()}
+g_unique = mutation_graph(unique_1_id, unique_2_id, df)
+fig = visualize_graph(g_unique,coord)
+fig.savefig('../Out/phenotype_SA6850_function_unique.eps', format='eps')
+
+
+#todo: get unique combination of mutations
+
+
+# todo: add analytical measurements for graph
 
 
 # get common mutations
@@ -265,7 +405,7 @@ for index, row in gff.iterrows():
         ranges[index] = f"{row.start}-{row.end}"
 
 # write it to file
-with open("../Out/mutated_genes_SA6850_phenotypes.txt", 'w') as f:
+with open("../Out/SA6850/mutated_genes_SA6850_phenotype.txt", 'w') as f:
     f.write(f"\n#Cluster 1 ({len(genes_1)}):\n")
     for key, value in genes_1: 
         f.write('%s,%s,%s:%s\n' % (key,gff.gene[key],ranges[key], value))
@@ -282,8 +422,35 @@ with open("../Out/mutated_genes_SA6850_phenotypes.txt", 'w') as f:
     for key,value in common:
         f.write('%s,%s,%s: %s\n' % (key,gff.gene[key],ranges[key], value))
         
+# store gff file
+gff.to_csv('../Out/gff_SA6850.csv')
+
+
+def extract_condition(dic):
+    conditions = []
+    for id_ in dic.keys():
+        cond = id_.split("_")[1]
+        if cond == "S":
+            conditions.append("S")
+        else:
+            conditions.append("T")
+    return conditions
         
-        
-        
-        
-        
+
+
+# store mutations list in csv
+with open("../Out/SA6850/list_mutated_genes_SA6850_phenotype.csv", 'w') as f:
+    f.write("Cluster,Mutated_gene,Condition\n")
+    for key, value in genes_1: 
+        f.write('1,%s,T\n' % (key))
+    for key, value in genes_2: 
+        cond = extract_condition(value[1])
+        if "S" in cond and "T" in cond:
+            f.write('2,%s,T/S\n' % (key))
+        elif "S" in cond:
+            f.write('2,%s,S\n' % (key))
+        else:
+            f.write('2,%s,T\n' % (key))
+
+
+    
