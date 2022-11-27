@@ -46,11 +46,11 @@ features <- as.data.frame(sapply(colnames(features),function(c){
 )
 
 # keep og hemolysis score
-features$og_hemolysis_score <- as.character(df$Hemolysis_score)
-features$og_growth_in_supernatant <- df$growth_in_supernatant
-features$og_growth_in_TSB <- df$growth_in_TSB
-features$og_STX <- df$average_STX
-features$og_H2O2 <- df$average_H2O2_survival
+features$org_hemolysis_score <- as.character(df$Hemolysis_score)
+features$org_growth_in_supernatant <- df$growth_in_supernatant
+features$org_growth_in_TSB <- df$growth_in_TSB
+features$org_STX <- df$average_STX
+features$org_H2O2 <- df$average_H2O2_survival
 
 
 
@@ -163,30 +163,33 @@ pdf("../Out/SA6850/heatmap_SA6850.pdf", width = 16, height = 8)
 
 
 # seperate relative and absolute values
-stx_max = max(abs(min(log(features$og_STX))),max(log(features$og_STX)))
-h2o2_max = max(abs(min(log(features$og_H2O2))),max(log(features$og_H2O2)))
+stx_max = max(abs(min(log(features$org_STX))),max(log(features$org_STX)))
+h2o2_max = max(abs(min(log(features$org_H2O2))),max(log(features$org_H2O2)))
 
 relative_m = t(as.matrix(features%>%
-                           mutate(log_STX_production = log(og_STX)/stx_max,
-                                  log_H2O2_survival = log(og_H2O2)/h2o2_max) %>%
+                           mutate(log_STX_production = log(org_STX)/stx_max,
+                                  log_H2O2_survival = log(org_H2O2)/h2o2_max) %>%
                            select(log_STX_production,log_H2O2_survival)))
 
-absolute_m = t(as.matrix(features%>%select(og_growth_in_supernatant,og_growth_in_TSB)))
+absolute_m = t(as.matrix(features%>%select(org_growth_in_supernatant,org_growth_in_TSB)))
 
 colnames(relative_m) <- features$ID
 colnames(absolute_m) <- features$ID
 
 # choose colors
-col_fun_relative = colorRamp2(c(-1,0,1), c("purple","white","orange"))
-col_fun_absolute= colorRamp2(c(min(absolute_m),max(absolute_m)), c("white","red"))
+col_fun_relative = colorRamp2(c(-1,0,1), c("DeepSkyBlue","white","purple"))
+col_fun_absolute= colorRamp2(c(min(absolute_m),(min(absolute_m) + max(absolute_m))/2,max(absolute_m)), c("white","red","darkred"))
 
 # column annotations
-cluster_ha = columnAnnotation(Phenotype_cluster = features$phenotype_clusters, name = "Clusters by Phenotype", col = list(Phenotype_cluster =  c("1" = "violet", "2" = "yellow", "3" = "light green", "4" = "red")))
+cluster_ha = columnAnnotation(Phenotype_cluster = features$phenotype_clusters, name = "Clusters by Phenotype", col = list(Phenotype_cluster =  c("1" = "Turquoise", "2" = "Gold", "3" = "CornflowerBlue", "4" = "FireBrick")))
 
-condition_ha = columnAnnotation(Evolution_condition = features$Condition, name = "Evolution Condition", col = list(Evolution_condition =  c("supernatant" = "light blue", "TSB" = "light green")))
+condition_ha = columnAnnotation(Evolution_condition = features$Condition, name = "Evolution Condition", col = list(Evolution_condition =  c("supernatant" = "OrangeRed", "TSB" = "Chartreuse")))
 
-hemolysis_ha = columnAnnotation(Hemolysis_score = as.factor(features$og_hemolysis_score), name = "Hemolysis score",
-    col = list(Hemolysis_score =  c("0" = "blue", "1" = "green", "2"= "red")))
+hemolysis_ha = HeatmapAnnotation(Hemolysis_score = as.factor(features$org_hemolysis_score), name = "Hemolysis score",
+    col = list(Hemolysis_score =  c("0" = "orange", "1" = "yellow", "2"= "green")),
+    annotation_legend_param = list(Hemolysis_score = list(labels = c("0 - absent", "1 - reduced", "2 - wild type")))
+    )
+
 
 
 relative_hm <- Heatmap(relative_m,top_annotation = c(condition_ha,cluster_ha),
@@ -314,13 +317,13 @@ ggplot(features, aes(x = log_H2O2_clusters, fill=Condition))+
 visualize hemolysis distribution on condition
 ```{r}
 ggplot(features,
-       aes(x = PC1, y= PC2,color=as.factor(og_hemolysis_score),shape=Condition))+
+       aes(x = PC1, y= PC2,color=as.factor(org_hemolysis_score),shape=Condition))+
   geom_point()
 
 ```
 
 ```{r}
-ggplot(features, aes(x = og_hemolysis_score, fill=Condition))+
+ggplot(features, aes(x = org_hemolysis_score, fill=Condition))+
   geom_bar()
 ```
 
@@ -344,4 +347,16 @@ write.csv(features%>%
             select(c("ID","Strain","Condition","cond_clusters","PC1", "PC2")),"../Out/SA6850/condition_results_SA6850.csv")
 ```
 
+
+```{r}
+ggplot(features, aes(x = log_average_STX, y = log_average_H2O2_survival, color = Condition)) +
+geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+ggplot(features, aes(x = log_average_STX, y = og_growth_in_supernatant)) +
+geom_point() +
+  geom_smooth()
+```
 
