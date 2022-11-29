@@ -158,6 +158,7 @@ ggplot(features%>%group_by(phenotype_clusters), aes(x = phenotype_clusters, y= l
 complex heatmap visualization
 ```{r}
 library(ComplexHeatmap)
+library(circlize)
 
 pdf("../Out/SA6850/heatmap_SA6850.pdf", width = 16, height = 8)
 
@@ -355,7 +356,7 @@ geom_point() +
 ```
 
 ```{r}
-ggplot(features, aes(x = log_average_STX, y = og_growth_in_supernatant)) +
+ggplot(features, aes(x = log_average_STX, y = org_growth_in_supernatant)) +
 geom_point() +
   geom_smooth()
 ```

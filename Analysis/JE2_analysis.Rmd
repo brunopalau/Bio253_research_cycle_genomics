@@ -159,6 +159,7 @@ ggplot(features%>%group_by(phenotype_clusters), aes(x = phenotype_clusters, y= l
 complex heatmap visualization
 ```{r}
 library(ComplexHeatmap)
+library(circlize)
 
 pdf("../Out/JE2/heatmap_JE2.pdf", width = 16, height = 8)
 
